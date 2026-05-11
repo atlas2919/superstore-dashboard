@@ -329,7 +329,7 @@ with col5:
         texttemplate="%{text}",
         textfont=dict(color=TXT),
         showscale=True,
-        colorbar=dict(title="Utilidad $", tickfont=dict(color=TXT), titlefont=dict(color=TXT))
+        colorbar=dict(title="Utilidad $", tickfont=dict(color=TXT))
     ))
     fig5.update_layout(
         title="Furniture pierde dinero en todas las regiones excepto South",
