@@ -19,11 +19,29 @@ st.set_page_config(
 # Verde = ganancia / Rojo = perdida / Naranja = alerta
 COLOR_GANANCIA = "#2ECC71"
 COLOR_PERDIDA  = "#E74C3C"
-COLOR_NEUTRO   = "#2C3E50"
+COLOR_NEUTRO   = "#1A1A2E"
 COLOR_ACENTO   = "#F39C12"
 COLOR_FONDO    = "#F4F6F9"
 PALETTE_CAT    = ["#2ECC71", "#F39C12", "#E74C3C"]
 PALETTE_SEQ    = ["#27AE60", "#F1C40F", "#E67E22", "#E74C3C", "#C0392B"]
+TXT            = "#111111"   # negro para textos internos de graficos
+
+
+def apply_text_style(fig, height=None):
+    """Aplica texto negro a todos los elementos del grafico."""
+    update = dict(
+        plot_bgcolor="white",
+        paper_bgcolor="white",
+        font=dict(color=TXT, size=12),
+        title_font=dict(color=TXT, size=14),
+        legend=dict(font=dict(color=TXT)),
+    )
+    if height:
+        update["height"] = height
+    fig.update_layout(**update)
+    fig.update_xaxes(title_font=dict(color=TXT), tickfont=dict(color=TXT))
+    fig.update_yaxes(title_font=dict(color=TXT), tickfont=dict(color=TXT))
+    return fig
 
 
 # CSS PERSONALIZADO
@@ -57,7 +75,6 @@ st.markdown("""
                 }
             </style>
 """, unsafe_allow_html=True)
-
 
 
 # CARGA DE DATOS
@@ -130,7 +147,6 @@ if dff.empty:
     st.stop()
 
 
-
 # ENCABEZADO
 st.markdown("""
             <h1 style='text-align:center; color:#2C3E50; margin-bottom:4px;'>
@@ -160,13 +176,13 @@ pct_perdidas = (dff["Profit"] < 0).mean() * 100
 avg_discount = dff["Discount"].mean() * 100
 total_orders = dff["Order ID"].nunique()
 
-k1.metric("💰 Ventas Totales", f"${total_sales:,.0f}")
-k2.metric("📈 Utilidad Total", f"${total_profit:,.0f}",
+k1.metric("💰 Ventas Totales",     f"${total_sales:,.0f}")
+k2.metric("📈 Utilidad Total",     f"${total_profit:,.0f}",
           delta=f"{'+' if total_profit > 0 else ''}{total_profit:,.0f}")
-k3.metric("📊 Margen Promedio", f"{profit_ratio:.1f}%")
-k4.metric("⚠️ Ventas en Pérdida", f"{pct_perdidas:.1f}%")
+k3.metric("📊 Margen Promedio",    f"{profit_ratio:.1f}%")
+k4.metric("⚠️ Ventas en Pérdida",  f"{pct_perdidas:.1f}%")
 k5.metric("🏷️ Descuento Promedio", f"{avg_discount:.1f}%")
-k6.metric("📦 Órdenes Totales", f"{total_orders:,}")
+k6.metric("📦 Órdenes Totales",    f"{total_orders:,}")
 
 st.markdown("<br>", unsafe_allow_html=True)
 
@@ -192,11 +208,8 @@ with col1:
                    annotation_text="Umbral crítico: 20%", annotation_position="top right",
                    annotation_font_color=COLOR_ACENTO)
     fig1.add_hline(y=0, line_color=COLOR_PERDIDA, line_width=1.5)
-    fig1.update_layout(
-        plot_bgcolor="white", paper_bgcolor="white",
-        font_color=COLOR_NEUTRO,
-        legend=dict(orientation="h", yanchor="bottom", y=1.02)
-    )
+    fig1.update_layout(legend=dict(orientation="h", yanchor="bottom", y=1.02))
+    apply_text_style(fig1)
     st.plotly_chart(fig1, use_container_width=True)
 
 with col2:
@@ -212,17 +225,17 @@ with col2:
         marker_color=disc_profit["color"],
         text=disc_profit["Profit"].round(0),
         texttemplate="%{text:,.0f}",
+        textfont=dict(color=TXT),
         textposition="outside"
     ))
     fig2.update_layout(
         title="Con descuentos ≥ 30%, el margen promedio es negativo",
         xaxis_title="Nivel de Descuento",
         yaxis_title="Utilidad Promedio (USD)",
-        plot_bgcolor="white", paper_bgcolor="white",
-        font_color=COLOR_NEUTRO,
         showlegend=False
     )
     fig2.add_hline(y=0, line_color=COLOR_NEUTRO, line_width=1)
+    apply_text_style(fig2)
     st.plotly_chart(fig2, use_container_width=True)
 
 st.markdown(f"""
@@ -253,19 +266,16 @@ with col3:
         marker_color=subcat["color"],
         text=subcat["Profit"].round(0),
         texttemplate="%{text:,.0f}",
+        textfont=dict(color=TXT),
         textposition="outside"
     ))
-
     fig3.update_layout(
         title="Tables y Bookcases son los principales destructores de valor",
         xaxis_title="Utilidad Total (USD)",
-        yaxis_title="",
-        plot_bgcolor="white", paper_bgcolor="white",
-        font_color=COLOR_NEUTRO,
-        height=450
+        yaxis_title=""
     )
-
     fig3.add_vline(x=0, line_color=COLOR_NEUTRO, line_width=1.5)
+    apply_text_style(fig3, height=450)
     st.plotly_chart(fig3, use_container_width=True)
 
 with col4:
@@ -274,7 +284,6 @@ with col4:
         Sales=("Sales", "sum"),
         Profit=("Profit", "sum")
     ).reset_index()
-
     treemap_df["Profit_Ratio"] = (treemap_df["Profit"] / treemap_df["Sales"] * 100).round(1)
 
     fig4 = px.treemap(
@@ -287,13 +296,8 @@ with col4:
         title="Subcategorías con mayor venta no siempre son las más rentables",
         hover_data={"Profit": ":,.0f", "Profit_Ratio": ":.1f"}
     )
-
-    fig4.update_layout(
-        paper_bgcolor="white",
-        font_color=COLOR_NEUTRO,
-        coloraxis_colorbar=dict(title="Utilidad $")
-    )
-
+    fig4.update_layout(coloraxis_colorbar=dict(title="Utilidad $", tickfont=dict(color=TXT)))
+    apply_text_style(fig4)
     st.plotly_chart(fig4, use_container_width=True)
 
 st.markdown("""
@@ -311,7 +315,7 @@ st.markdown('<p class="section-title">🗺️ Texas y Ohio concentran las mayore
 col5, col6 = st.columns(2)
 
 with col5:
-    # GRAFICO 5 — Heatmap Region × Categoria
+    # GRAFICO 5 — Heatmap Region x Categoria
     heat_df = dff.groupby(["Region", "Category"])["Profit"].sum().reset_index()
     heat_pivot = heat_df.pivot(index="Category", columns="Region", values="Profit")
 
@@ -323,18 +327,16 @@ with col5:
         zmid=0,
         text=[[f"${v:,.0f}" for v in row] for row in heat_pivot.values],
         texttemplate="%{text}",
+        textfont=dict(color=TXT),
         showscale=True,
-        colorbar=dict(title="Utilidad $")
+        colorbar=dict(title="Utilidad $", tickfont=dict(color=TXT), titlefont=dict(color=TXT))
     ))
-
     fig5.update_layout(
         title="Furniture pierde dinero en todas las regiones excepto South",
         xaxis_title="Región",
-        yaxis_title="Categoría",
-        plot_bgcolor="white", paper_bgcolor="white",
-        font_color=COLOR_NEUTRO
+        yaxis_title="Categoría"
     )
-
+    apply_text_style(fig5)
     st.plotly_chart(fig5, use_container_width=True)
 
 with col6:
@@ -351,20 +353,16 @@ with col6:
         marker_color=top_bottom["color"],
         text=top_bottom["Profit"].round(0),
         texttemplate="%{text:,.0f}",
+        textfont=dict(color=TXT),
         textposition="outside"
     ))
-
     fig6.update_layout(
         title="Texas y Ohio destruyen más utilidad que cualquier otro estado",
         xaxis_title="Utilidad Total (USD)",
-        yaxis_title="",
-        plot_bgcolor="white", paper_bgcolor="white",
-        font_color=COLOR_NEUTRO,
-        height=420
+        yaxis_title=""
     )
-
     fig6.add_vline(x=0, line_color=COLOR_NEUTRO, line_width=1.5)
-    
+    apply_text_style(fig6, height=420)
     st.plotly_chart(fig6, use_container_width=True)
 
 st.markdown("""
@@ -391,14 +389,11 @@ with col7:
         labels={"Discount": "Descuento aplicado", "Category": "Categoría"},
         points="outliers"
     )
-
     fig7.update_layout(
-        plot_bgcolor="white", paper_bgcolor="white",
-        font_color=COLOR_NEUTRO,
         showlegend=False,
         yaxis_tickformat=".0%"
     )
-
+    apply_text_style(fig7)
     st.plotly_chart(fig7, use_container_width=True)
 
 with col8:
@@ -413,15 +408,9 @@ with col8:
         title="Consumer lidera pérdidas en Furniture en todos los segmentos",
         labels={"Profit": "Utilidad (USD)", "Segment": "Segmento", "Category": "Categoría"}
     )
-
     fig8.add_hline(y=0, line_color=COLOR_NEUTRO, line_width=1)
-    
-    fig8.update_layout(
-        plot_bgcolor="white", paper_bgcolor="white",
-        font_color=COLOR_NEUTRO,
-        legend=dict(orientation="h", yanchor="bottom", y=1.02)
-    )
-    
+    fig8.update_layout(legend=dict(orientation="h", yanchor="bottom", y=1.02))
+    apply_text_style(fig8)
     st.plotly_chart(fig8, use_container_width=True)
 
 st.markdown("""
@@ -452,13 +441,8 @@ with col9:
         title="El crecimiento en ventas de Furniture no se traduce en ganancias",
         labels={"Sales": "Ventas (USD)", "Año": "Año", "Category": "Categoría"}
     )
-    
-    fig9.update_layout(
-        plot_bgcolor="white", paper_bgcolor="white",
-        font_color=COLOR_NEUTRO,
-        legend=dict(orientation="h", yanchor="bottom", y=1.02)
-    )
-    
+    fig9.update_layout(legend=dict(orientation="h", yanchor="bottom", y=1.02))
+    apply_text_style(fig9)
     st.plotly_chart(fig9, use_container_width=True)
 
 with col10:
@@ -470,15 +454,9 @@ with col10:
         title="La utilidad de Technology crece consistentemente año a año",
         labels={"Profit": "Utilidad (USD)", "Año": "Año", "Category": "Categoría"}
     )
-    
     fig10.add_hline(y=0, line_dash="dot", line_color=COLOR_PERDIDA)
-    
-    fig10.update_layout(
-        plot_bgcolor="white", paper_bgcolor="white",
-        font_color=COLOR_NEUTRO,
-        legend=dict(orientation="h", yanchor="bottom", y=1.02)
-    )
-    
+    fig10.update_layout(legend=dict(orientation="h", yanchor="bottom", y=1.02))
+    apply_text_style(fig10)
     st.plotly_chart(fig10, use_container_width=True)
 
 st.markdown("""
